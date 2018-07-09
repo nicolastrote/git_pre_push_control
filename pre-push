@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# Git integration hook.
+echo "+----------------------------------------------------------------+
+| Automatically execute validation and test before the git push  |
++----------------------------------------------------------------+"
+
+# Constantes
+MAX_FILE_CHANGED="30"
+MAX_NEW_INSERTIONS="1000"
+GIT_INFO_DIFF=$(git diff --stat @ @{upstream} )
+GIT_INFO_DIFF_SIZE=${#GIT_INFO_DIFF}
+
+# Condition sur la taille de GIT_INFO_DIFF
+if (( "$GIT_INFO_DIFF_SIZE" > "0" ))
+then
+  # Extraction des données
+  fileChanged=$(sed -r 's/(.*+++\s+)(.*)(\s+file.*)/\2/' <<< $GIT_INFO_DIFF)
+  newInsertions=$(sed -r 's/(.*,\s+)(.*)(\s+ins.*)/\2/' <<< $GIT_INFO_DIFF)
+
+  # Conditions
+  echo " You have $fileChanged changed files, and $newInsertions insertions"
+  if (( "$fileChanged" > "$MAX_FILE_CHANGED" || "$newInsertions" > "$MAX_NEW_INSERTIONS" ))
+  then
+     echo "+----------------------------------------------------------------+"
+     echo "| You shall not pass! You aren't allowed to push cause you have  |"
+     echo "| more than $MAX_FILE_CHANGED changed files, or $MAX_NEW_INSERTIONS insertions               |"
+     echo "+----------------------------------------------------------------+"
+     exit 1
+  fi
+fi
+npm run prepush
